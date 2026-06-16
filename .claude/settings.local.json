@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(flutter *)",
+      "PowerShell($env:PATH -split \";\" | Where-Object { $_ -match \"flutter\" })",
+      "PowerShell(Test-Path *)",
+      "PowerShell(Get-ChildItem C:\\\\Users\\\\manue -Depth 3 -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq \"flutter\" } | Select-Object FullName)",
+      "WebFetch(domain:storage.googleapis.com)",
+      "PowerShell(if \\(Test-Path \"C:\\\\Users\\\\manue\\\\flutter_sdk.zip\"\\) { $size = \\(Get-Item \"C:\\\\Users\\\\manue\\\\flutter_sdk.zip\"\\).Length / 1MB; Write-Host \"$size MB\" })",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Stop-Process *)",
+      "PowerShell(curl.exe --version)",
+      "PowerShell(curl.exe -L -o \"C:\\\\Users\\\\manue\\\\flutter_sdk.zip\" \"https://storage.googleapis.com/flutter_infra_release/releases/stable/windows/flutter_windows_3.44.2-stable.zip\" --progress-bar)",
+      "PowerShell(if \\(Test-Path \"C:\\\\Users\\\\manue\\\\flutter_sdk.zip\"\\) { $size = \\(Get-Item \"C:\\\\Users\\\\manue\\\\flutter_sdk.zip\"\\).Length / 1MB; Write-Host \"$\\([math]::Round\\($size,1\\)\\) MB\" })",
+      "PowerShell(curl.exe -L -o \"C:\\\\Users\\\\manue\\\\android_studio.exe\" \"https://redirector.gvt1.com/edgedl/android/studio/install/2024.3.2.14/android-studio-2024.3.2.14-windows.exe\" --progress-bar)",
+      "PowerShell(curl.exe -L -o \"C:\\\\Users\\\\manue\\\\cmdline-tools.zip\" \"https://dl.google.com/android/repository/commandlinetools-win-13114758_latest.zip\" --progress-bar)",
+      "PowerShell(Get-PnpDevice *)",
+      "PowerShell(Select-String *)",
+      "PowerShell(New-Item *)",
+      "PowerShell(curl.exe -L -o \"C:\\\\Users\\\\manue\\\\git_installer.exe\" \"https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.2/Git-2.47.1.2-64-bit.exe\" --progress-bar)",
+      "PowerShell(Start-Process -FilePath \"C:\\\\Users\\\\manue\\\\git_installer.exe\" -ArgumentList \"/VERYSILENT /NORESTART /NOCANCEL /SP- /CLOSEAPPLICATIONS /RESTARTAPPLICATIONS /COMPONENTS=icons,ext\\\\reg\\\\shellhere,assoc,assoc_sh\" -Wait)"
+    ]
+  }
+}

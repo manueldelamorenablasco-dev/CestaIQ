@@ -1,0 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../data/services/auth_service.dart';
+
+final authServiceProvider = Provider<AuthService>((ref) => AuthService());
+
+// Stream del estado de autenticación → escuchado en app.dart
+final authStateProvider = StreamProvider<User?>((ref) {
+  return ref.watch(authServiceProvider).authStateChanges;
+});

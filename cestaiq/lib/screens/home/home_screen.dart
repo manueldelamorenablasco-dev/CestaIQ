@@ -215,7 +215,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       crossAxisCount: 2,
                       mainAxisSpacing: 12,
                       crossAxisSpacing: 12,
-                      childAspectRatio: 0.78,
+                      childAspectRatio: 0.70,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (context, i) {
@@ -335,7 +335,6 @@ class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
             : const [],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),

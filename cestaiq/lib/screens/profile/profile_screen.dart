@@ -290,11 +290,10 @@ class _Section extends StatelessWidget {
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
-          ),
+        Material(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(14),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             children: List.generate(children.length, (i) {
               if (i < children.length - 1) {

@@ -4,16 +4,13 @@ import '../core/theme/app_theme.dart';
 
 enum ProductImageSize { small, medium, large }
 
-/// Widget reutilizable para mostrar imágenes de producto con:
-/// - Skeleton animado mientras carga
-/// - Fallback emoji si la URL está vacía o falla
-/// - Optimización automática de tamaño para imgix (Mercadona CDN)
 class ProductImage extends StatelessWidget {
   final String imageUrl;
   final String fallbackEmoji;
   final BoxFit fit;
   final BorderRadius borderRadius;
   final ProductImageSize size;
+  final double scale;
 
   const ProductImage({
     super.key,
@@ -22,6 +19,7 @@ class ProductImage extends StatelessWidget {
     this.fit = BoxFit.contain,
     this.borderRadius = BorderRadius.zero,
     this.size = ProductImageSize.medium,
+    this.scale = 1.0,
   });
 
   @override
@@ -29,24 +27,27 @@ class ProductImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: borderRadius,
       child: ColoredBox(
-        color: AppColors.surfaceVariant,
+        color: Colors.white,
         child: imageUrl.isEmpty
             ? _EmojiFallback(emoji: fallbackEmoji)
             : CachedNetworkImage(
                 imageUrl: _optimizedUrl(imageUrl, size),
-                // imageBuilder convierte la imagen en DecorationImage (decoración pura,
-                // no contenido), por lo que nunca afecta al layout ni provoca saltos.
-                imageBuilder: (_, imageProvider) => SizedBox.expand(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: imageProvider,
-                        fit: BoxFit.contain,
-                        alignment: Alignment.center,
+                imageBuilder: (_, imageProvider) {
+                  final image = SizedBox.expand(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: imageProvider,
+                          fit: fit,
+                          alignment: Alignment.center,
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                  return scale != 1.0
+                      ? Transform.scale(scale: scale, child: image)
+                      : image;
+                },
                 fadeInDuration: Duration.zero,
                 fadeOutDuration: Duration.zero,
                 placeholder: (_, __) => const _Skeleton(),
@@ -56,20 +57,18 @@ class ProductImage extends StatelessWidget {
     );
   }
 
-  /// Transforma URLs de imgix (Mercadona) para pedir el tamaño justo.
-  /// Deja intactas las URLs de otros dominios.
   static String _optimizedUrl(String url, ProductImageSize size) {
     final uri = Uri.tryParse(url);
     if (uri == null || !uri.host.contains('imgix.net')) return url;
     final px = switch (size) {
       ProductImageSize.small => '80',
-      ProductImageSize.medium => '120',
+      ProductImageSize.medium => '300',
       ProductImageSize.large => '600',
     };
     final params = Map<String, String>.from(uri.queryParameters)
       ..['w'] = px
       ..['h'] = px
-      ..['fit'] = 'crop';
+      ..['fit'] = 'fill';
     return uri.replace(queryParameters: params).toString();
   }
 }

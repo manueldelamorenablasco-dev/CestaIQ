@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../providers/cart_provider.dart';
+import '../../widgets/product_image.dart';
 import 'cart_result_screen.dart';
 
 class CartScreen extends ConsumerWidget {
@@ -62,19 +63,15 @@ class CartScreen extends ConsumerWidget {
                           ),
                           child: Row(
                             children: [
-                              // Emoji
-                              Container(
+                              // Miniatura producto
+                              SizedBox(
                                 width: 52,
                                 height: 52,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceVariant,
+                                child: ProductImage(
+                                  imageUrl: item.product.imageUrl,
+                                  fallbackEmoji: item.product.imageEmoji,
                                   borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    item.product.imageEmoji,
-                                    style: const TextStyle(fontSize: 26),
-                                  ),
+                                  size: ProductImageSize.small,
                                 ),
                               ),
                               const SizedBox(width: 12),

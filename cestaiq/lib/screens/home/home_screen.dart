@@ -34,124 +34,85 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final featuredProducts = ref.watch(featuredProductsProvider);
     final categories = ref.watch(categoriesProvider).valueOrNull ?? const ['Todos'];
+    final searchQuery = ref.watch(searchQueryProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // ── Header ─────────────────────────────────────────────────────
+            // ── Saludo (desaparece al hacer scroll) ────────────────────────
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _greeting(user?.displayName),
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                  letterSpacing: -0.3,
-                                ),
-                              ),
-                              const Text(
-                                '¿Dónde es más barata tu compra hoy?',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _greeting(user?.displayName),
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                              letterSpacing: -0.3,
+                            ),
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
-                            borderRadius: BorderRadius.circular(12),
+                          const Text(
+                            '¿Dónde es más barata tu compra hoy?',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
-                          child: const Text('🛒', style: TextStyle(fontSize: 20)),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // ── Buscador ──────────────────────────────────────────
-                    TextField(
-                      controller: _searchCtrl,
-                      onChanged: (value) {
-                        ref.read(searchQueryProvider.notifier).state = value;
-                        _searchDebounce?.cancel();
-                        _searchDebounce = Timer(const Duration(milliseconds: 800), () {
-                          ref.read(analyticsServiceProvider).logSearch(value);
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Buscar productos...',
-                        prefixIcon: const Icon(Icons.search, size: 20),
-                        suffixIcon: _searchCtrl.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.close, size: 18),
-                                onPressed: () {
-                                  _searchCtrl.clear();
-                                  ref.read(searchQueryProvider.notifier).state = '';
-                                },
-                              )
-                            : null,
+                        ],
                       ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text('🛒', style: TextStyle(fontSize: 20)),
                     ),
                   ],
                 ),
               ),
             ),
 
-            // ── Categorías ─────────────────────────────────────────────────
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 44,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: categories.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, i) {
-                    final cat = categories[i];
-                    final isSelected = cat == 'Todos'
-                        ? selectedCategory == null
-                        : selectedCategory == cat;
-                    return FilterChip(
-                      label: Text(
-                        cat,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                          fontSize: 13,
-                        ),
-                      ),
-                      selected: isSelected,
-                      onSelected: (_) {
-                        ref.read(selectedCategoryProvider.notifier).state =
-                            cat == 'Todos' ? null : cat;
-                      },
-                    );
-                  },
-                ),
+            // ── Búsqueda + Categorías (sticky) ──────────────────────────────
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _SearchBarDelegate(
+                searchCtrl: _searchCtrl,
+                searchQuery: searchQuery,
+                categories: categories,
+                selectedCategory: selectedCategory,
+                onSearch: (value) {
+                  ref.read(searchQueryProvider.notifier).state = value;
+                  _searchDebounce?.cancel();
+                  _searchDebounce = Timer(const Duration(milliseconds: 800), () {
+                    ref.read(analyticsServiceProvider).logSearch(value);
+                  });
+                },
+                onClear: () {
+                  _searchCtrl.clear();
+                  ref.read(searchQueryProvider.notifier).state = '';
+                },
+                onCategorySelected: (cat) {
+                  ref.read(selectedCategoryProvider.notifier).state =
+                      cat == 'Todos' ? null : cat;
+                },
               ),
             ),
 
             const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
-            // ── Destacados (solo cuando no hay búsqueda activa) ──────────
-            if (ref.watch(searchQueryProvider).isEmpty &&
-                selectedCategory == null) ...[
+            // ── Destacados (solo cuando no hay búsqueda activa) ─────────────
+            if (searchQuery.isEmpty && selectedCategory == null) ...[
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
@@ -209,7 +170,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
             ],
 
-            // ── Grid de productos ──────────────────────────────────────────
+            // ── Grid de productos ───────────────────────────────────────────
             filteredAsync.when(
               loading: () => const SliverToBoxAdapter(
                 child: Center(
@@ -230,11 +191,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         padding: const EdgeInsets.all(40),
                         child: Column(
                           children: [
-                            const Text('🔍',
-                                style: TextStyle(fontSize: 48)),
+                            const Text('🔍', style: TextStyle(fontSize: 48)),
                             const SizedBox(height: 12),
                             Text(
-                              'No encontramos "${ref.watch(searchQueryProvider)}"',
+                              'No encontramos "$searchQuery"',
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 15,
@@ -326,4 +286,111 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final firstName = name?.split(' ').first ?? '';
     return firstName.isNotEmpty ? '$saludo, $firstName 👋' : saludo;
   }
+}
+
+// ── Delegate para la búsqueda + categorías fijas (sticky) ─────────────────────
+
+class _SearchBarDelegate extends SliverPersistentHeaderDelegate {
+  final TextEditingController searchCtrl;
+  final String searchQuery;
+  final List<String> categories;
+  final String? selectedCategory;
+  final ValueChanged<String> onSearch;
+  final VoidCallback onClear;
+  final ValueChanged<String> onCategorySelected;
+
+  // 8 top + 56 TextField + 8 gap + 44 categories + 8 bottom
+  static const double _height = 124;
+
+  const _SearchBarDelegate({
+    required this.searchCtrl,
+    required this.searchQuery,
+    required this.categories,
+    required this.selectedCategory,
+    required this.onSearch,
+    required this.onClear,
+    required this.onCategorySelected,
+  });
+
+  @override
+  double get minExtent => _height;
+
+  @override
+  double get maxExtent => _height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        // Sombra sutil cuando hay contenido desplazándose por debajo
+        boxShadow: overlapsContent
+            ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.07),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : const [],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+            child: TextField(
+              controller: searchCtrl,
+              onChanged: onSearch,
+              decoration: InputDecoration(
+                hintText: 'Buscar productos...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.close, size: 18),
+                        onPressed: onClear,
+                      )
+                    : null,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 44,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: categories.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (_, i) {
+                final cat = categories[i];
+                final isSelected = cat == 'Todos'
+                    ? selectedCategory == null
+                    : selectedCategory == cat;
+                return FilterChip(
+                  label: Text(
+                    cat,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : AppColors.textPrimary,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                      fontSize: 13,
+                    ),
+                  ),
+                  selected: isSelected,
+                  onSelected: (_) => onCategorySelected(cat),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SearchBarDelegate old) =>
+      old.searchQuery != searchQuery ||
+      old.selectedCategory != selectedCategory ||
+      old.categories != categories;
 }

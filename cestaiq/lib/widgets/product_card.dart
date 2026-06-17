@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_theme.dart';
 import '../data/models/product.dart';
+import 'product_image.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -45,17 +46,14 @@ class _GridCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Imagen / Emoji
+            // Imagen
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                child: Center(
-                  child: Text(product.imageEmoji, style: const TextStyle(fontSize: 44)),
-                ),
+              child: ProductImage(
+                imageUrl: product.imageUrl,
+                fallbackEmoji: product.imageEmoji,
+                fit: BoxFit.contain,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                size: ProductImageSize.medium,
               ),
             ),
 
@@ -157,15 +155,12 @@ class _HorizontalCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceVariant,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                child: Center(
-                  child: Text(product.imageEmoji, style: const TextStyle(fontSize: 40)),
-                ),
+              child: ProductImage(
+                imageUrl: product.imageUrl,
+                fallbackEmoji: product.imageEmoji,
+                fit: BoxFit.contain,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                size: ProductImageSize.medium,
               ),
             ),
             Padding(

@@ -6,6 +6,7 @@ import '../../data/models/price.dart';
 import '../../providers/analytics_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/products_provider.dart';
+import '../../widgets/product_image.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
   final String productId;
@@ -128,15 +129,14 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
+                      SizedBox(
                         width: double.infinity,
-                        height: 200,
-                        color: AppColors.surfaceVariant,
-                        child: Center(
-                          child: Text(
-                            product.imageEmoji,
-                            style: const TextStyle(fontSize: 80),
-                          ),
+                        height: 220,
+                        child: ProductImage(
+                          imageUrl: product.imageUrl,
+                          fallbackEmoji: product.imageEmoji,
+                          fit: BoxFit.contain,
+                          size: ProductImageSize.large,
                         ),
                       ),
                       Padding(

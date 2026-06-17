@@ -23,7 +23,8 @@
       "PowerShell(flutter analyze *)",
       "PowerShell(flutter build *)",
       "PowerShell(adb install *)",
-      "PowerShell(git *)"
+      "PowerShell(git *)",
+      "PowerShell(git push *)"
     ]
   }
 }

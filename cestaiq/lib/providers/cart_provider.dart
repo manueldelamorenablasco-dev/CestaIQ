@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/cart_item.dart';
+import '../data/models/price.dart';
 import '../data/models/product.dart';
 import 'products_provider.dart';
 
@@ -43,6 +44,14 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
 
 final cartProvider =
     StateNotifierProvider<CartNotifier, List<CartItem>>((ref) => CartNotifier());
+
+// Precios individuales por producto para la cesta actual (usado en el detalle del resultado)
+final cartItemPricesProvider = FutureProvider<Map<String, Price>>((ref) async {
+  final cartItems = ref.watch(cartProvider);
+  if (cartItems.isEmpty) return {};
+  final productIds = cartItems.map((item) => item.product.id).toList();
+  return ref.watch(productServiceProvider).getPricesMap(productIds);
+});
 
 // Totales por supermercado para la cesta actual
 final cartTotalsProvider = FutureProvider<Map<String, double>>((ref) async {

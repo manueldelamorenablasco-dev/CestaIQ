@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
-import '../../data/mock/mock_data.dart';
 import '../../providers/analytics_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
@@ -34,6 +33,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final filteredAsync = ref.watch(filteredProductsProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final featuredProducts = ref.watch(featuredProductsProvider);
+    final categories = ref.watch(categoriesProvider).valueOrNull ?? const ['Todos'];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -120,10 +120,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: MockData.categories.length,
+                  itemCount: categories.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
                   itemBuilder: (context, i) {
-                    final cat = MockData.categories[i];
+                    final cat = categories[i];
                     final isSelected = cat == 'Todos'
                         ? selectedCategory == null
                         : selectedCategory == cat;

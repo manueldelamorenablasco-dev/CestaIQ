@@ -119,7 +119,7 @@ class FirestoreProductService {
       if (cats.isNotEmpty) return ['Todos', ...cats];
     } catch (_) {}
 
-    return MockData.categories;
+    return ['Todos'];
   }
 
   List<String> _parseCategoryList(Map<String, dynamic>? data) {
@@ -149,6 +149,8 @@ class FirestoreProductService {
   }
 
   // ── Control de caché ──────────────────────────────────────────────────────
+
+  Future<bool> isCacheValid() => _isCacheValid();
 
   Future<bool> _isCacheValid() async {
     try {

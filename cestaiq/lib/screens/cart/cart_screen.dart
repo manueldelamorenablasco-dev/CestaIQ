@@ -96,7 +96,7 @@ class CartScreen extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      item.product.brand,
+                                      [item.product.brand, item.product.format].where((s) => s.isNotEmpty).join(' · '),
                                       style: const TextStyle(
                                         fontSize: 12,
                                         color: AppColors.textSecondary,

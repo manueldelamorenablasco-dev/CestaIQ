@@ -25,6 +25,7 @@ class _CartResultScreenState extends ConsumerState<CartResultScreen> {
   Widget build(BuildContext context) {
     final cartItems = ref.watch(cartProvider);
     final totalsAsync = ref.watch(cartTotalsProvider);
+    final pricesMap = ref.watch(cartItemPricesProvider).valueOrNull ?? {};
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -335,7 +336,10 @@ class _CartResultScreenState extends ConsumerState<CartResultScreen> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   Text(
-                                    'x${item.quantity}',
+                                    [
+                                      if (item.product.format.isNotEmpty) item.product.format,
+                                      'x${item.quantity}',
+                                    ].join(' · '),
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.textSecondary,
@@ -349,19 +353,16 @@ class _CartResultScreenState extends ConsumerState<CartResultScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: sorted.map((e) {
                                 final smId = e.key;
-                                final price = MockData.prices
-                                    .where((p) =>
-                                        p.productId == item.product.id &&
-                                        p.supermarketId == smId)
-                                    .firstOrNull;
+                                final price = pricesMap[item.product.id];
+                                final hasPrice = price != null && price.supermarketId == smId;
                                 final isCheapestSm = smId == cheapestId;
                                 return Container(
                                   width: 60,
                                   alignment: Alignment.centerRight,
                                   child: Text(
-                                    price != null
+                                    hasPrice
                                         ? '${(price.amount * item.quantity).toStringAsFixed(2)} €'
-                                        : '-',
+                                        : '–',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: isCheapestSm

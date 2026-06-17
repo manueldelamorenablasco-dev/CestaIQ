@@ -87,7 +87,7 @@ class _GridCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    product.brand,
+                    [product.brand, product.format].where((s) => s.isNotEmpty).join(' · '),
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.textSecondary,

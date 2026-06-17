@@ -27,176 +27,227 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final productId = widget.productId;
-    final product = MockData.products.firstWhere((p) => p.id == productId);
+    final productAsync = ref.watch(productByIdProvider(productId));
     final pricesAsync = ref.watch(productPricesProvider(productId));
     final cartItems = ref.watch(cartProvider);
-    final isInCart = cartItems.any((item) => item.product.id == productId);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-        actions: [
-          if (isInCart)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Chip(
-                avatar: const Icon(Icons.check, size: 14, color: AppColors.primary),
-                label: const Text('En cesta'),
-                backgroundColor: AppColors.primaryLight,
-                labelStyle: const TextStyle(
-                  fontSize: 12,
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
-                side: BorderSide.none,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-              ),
-            ),
-        ],
+    return productAsync.when(
+      loading: () => Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(),
+        body: const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       ),
-      body: Column(
-        children: [
-          // ── Hero del producto ────────────────────────────────────────────
-          Expanded(
-            child: SingleChildScrollView(
+      error: (e, _) => Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.textSecondary),
+              const SizedBox(height: 16),
+              const Text(
+                'No se pudo cargar el producto',
+                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Volver'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (product) {
+        if (product == null) {
+          return Scaffold(
+            backgroundColor: AppColors.background,
+            appBar: AppBar(),
+            body: Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Imagen / Emoji
-                  Container(
-                    width: double.infinity,
-                    height: 200,
-                    color: AppColors.surfaceVariant,
-                    child: Center(
-                      child: Text(
-                        product.imageEmoji,
-                        style: const TextStyle(fontSize: 80),
-                      ),
+                  const Text('🔍', style: TextStyle(fontSize: 48)),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Producto no disponible',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Categoría
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryLight,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            product.category,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-
-                        // Nombre
-                        Text(
-                          product.name,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          product.brand,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        // ── Comparativa de precios ──────────────────────
-                        const Text(
-                          'Comparar precios',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          'Ordenados de menor a mayor precio',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        pricesAsync.when(
-                          loading: () => const Center(
-                            child: CircularProgressIndicator(
-                                color: AppColors.primary),
-                          ),
-                          error: (e, _) => Text('Error: $e'),
-                          data: (prices) {
-                            return _PriceList(prices: prices);
-                          },
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Este producto ya no está en el catálogo.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 24),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Volver'),
                   ),
                 ],
               ),
             ),
-          ),
+          );
+        }
 
-          // ── Botón añadir a cesta ────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              border: Border(
-                top: BorderSide(color: AppColors.divider, width: 0.5),
-              ),
-            ),
-            child: ElevatedButton.icon(
-              onPressed: () {
-                ref.read(cartProvider.notifier).addProduct(product);
-                ref.read(analyticsServiceProvider).logAddToCart(
-                  productId: product.id,
-                  productName: product.name,
-                  category: product.category,
-                );
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Row(
-                      children: [
-                        Icon(Icons.check_circle, color: Colors.white, size: 18),
-                        SizedBox(width: 8),
-                        Text('Añadido a tu cesta'),
-                      ],
+        final isInCart = cartItems.any((item) => item.product.id == productId);
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            title: Text(product.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+            actions: [
+              if (isInCart)
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Chip(
+                    avatar: const Icon(Icons.check, size: 14, color: AppColors.primary),
+                    label: const Text('En cesta'),
+                    backgroundColor: AppColors.primaryLight,
+                    labelStyle: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
                     ),
-                    backgroundColor: AppColors.primary,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    duration: const Duration(seconds: 2),
+                    side: BorderSide.none,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
                   ),
-                );
-              },
-              icon: const Icon(Icons.add_shopping_cart_outlined),
-              label: Text(isInCart ? 'Añadir otra unidad' : 'Añadir a mi cesta'),
-            ),
+                ),
+            ],
           ),
-        ],
-      ),
+          body: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 200,
+                        color: AppColors.surfaceVariant,
+                        child: Center(
+                          child: Text(
+                            product.imageEmoji,
+                            style: const TextStyle(fontSize: 80),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                product.category,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              product.name,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              product.brand,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            const Text(
+                              'Precio',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            pricesAsync.when(
+                              loading: () => const Center(
+                                child: CircularProgressIndicator(
+                                    color: AppColors.primary),
+                              ),
+                              error: (e, _) => const Text(
+                                'No se pudo cargar el precio.',
+                                style: TextStyle(color: AppColors.textSecondary),
+                              ),
+                              data: (prices) => _PriceList(prices: prices),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border(
+                    top: BorderSide(color: AppColors.divider, width: 0.5),
+                  ),
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    ref.read(cartProvider.notifier).addProduct(product);
+                    ref.read(analyticsServiceProvider).logAddToCart(
+                      productId: product.id,
+                      productName: product.name,
+                      category: product.category,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white, size: 18),
+                            SizedBox(width: 8),
+                            Text('Añadido a tu cesta'),
+                          ],
+                        ),
+                        backgroundColor: AppColors.primary,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add_shopping_cart_outlined),
+                  label: Text(isInCart ? 'Añadir otra unidad' : 'Añadir a mi cesta'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

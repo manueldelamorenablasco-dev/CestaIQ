@@ -25,18 +25,12 @@ void main() async {
     ),
   );
 
-  // MODO DEMO: captura errores si Firebase no está configurado todavía.
-  // Cuando tengas google-services.json real, elimina el try/catch.
-  try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-    // Offline persistence: el SDK guarda los documentos en SQLite local.
-    // Arranques en frío repetidos sirven desde caché → 0 lecturas de servidor.
-    FirebaseFirestore.instance.settings = const Settings(
-      persistenceEnabled: true,
-      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-    );
-    await AnalyticsService().logAppOpen();
-  } catch (_) {}
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+  );
+  await AnalyticsService().logAppOpen();
 
   runApp(
     const ProviderScope(

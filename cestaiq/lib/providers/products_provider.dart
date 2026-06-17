@@ -1,10 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../data/mock/mock_data.dart';
 import '../data/models/price.dart';
 import '../data/models/product.dart';
 import '../data/services/product_service.dart';
 
 final productServiceProvider = Provider<ProductService>((ref) => ProductService());
+
+// true si el caché local es válido (evita spinner en arranques con datos recientes)
+final productsCacheValidProvider = FutureProvider<bool>((ref) {
+  return ref.watch(productServiceProvider).isCacheValid();
+});
 
 // Todos los productos
 final productsProvider = FutureProvider<List<Product>>((ref) {
@@ -41,9 +45,23 @@ final productPricesProvider =
   return ref.watch(productServiceProvider).getPricesForProduct(productId);
 });
 
-// Productos destacados
+// Producto por ID — busca en la lista ya cargada, sin lectura adicional a Firestore
+final productByIdProvider = Provider.family<AsyncValue<Product?>, String>((ref, productId) {
+  return ref.watch(productsProvider).whenData((products) {
+    for (final p in products) {
+      if (p.id == productId) return p;
+    }
+    return null;
+  });
+});
+
+// Categorías reales desde Firestore/metadata (1 lectura)
+final categoriesProvider = FutureProvider<List<String>>((ref) {
+  return ref.watch(productServiceProvider).getCategories();
+});
+
+// Productos destacados — primeros productos reales cargados
 final featuredProductsProvider = Provider<List<Product>>((ref) {
-  return MockData.products
-      .where((p) => MockData.featuredProductIds.contains(p.id))
-      .toList();
+  final products = ref.watch(productsProvider).valueOrNull ?? [];
+  return products.isEmpty ? [] : products.take(8).toList();
 });

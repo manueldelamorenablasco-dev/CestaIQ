@@ -145,6 +145,33 @@ class MercadonaProvider(SupermarketProvider):
 
     # ── Transformación de datos ─────────────────────────────────────────────
 
+    @staticmethod
+    def _build_format(pi: dict) -> str:
+        """
+        Construye una cadena legible del formato/tamaño del producto.
+
+        Casos reales observados:
+          - unit_size=1,  size_format="l",  is_pack=False → "1 l"
+          - unit_size=5,  size_format="l",  is_pack=False → "5 l"
+          - unit_size=6,  size_format="l",  is_pack=True,  total_units=6, pack_size=1 → "6 x 1 l"
+          - unit_size=500, size_format="g", is_pack=False → "500 g"
+        """
+        size = pi.get("unit_size")
+        fmt = (pi.get("size_format") or pi.get("reference_format") or "").strip()
+        is_pack = pi.get("is_pack", False)
+        pack_size = pi.get("pack_size")
+        total_units = pi.get("total_units")
+
+        if is_pack and total_units and pack_size:
+            pack_str = int(pack_size) if pack_size == int(pack_size) else pack_size
+            return f"{int(total_units)} x {pack_str} {fmt}".strip()
+
+        if size is not None and fmt:
+            size_str = int(size) if size == int(size) else size
+            return f"{size_str} {fmt}".strip()
+
+        return fmt
+
     def _parse_product(
         self, raw: dict, category: str, subcategory: str, now
     ) -> tuple[Product, Price] | None:
@@ -162,16 +189,18 @@ class MercadonaProvider(SupermarketProvider):
                 category=category,
                 subcategory=subcategory,
                 image_url=raw.get("thumbnail") or "",
-                format=pi.get("size_format") or pi.get("reference_format") or "",
+                format=self._build_format(pi),
                 updated_at=now,
             )
 
-            unit_price_raw = pi.get("bulk_price") or pi.get("reference_price")
+            # unit_price = precio que pagas por la unidad (p.ej. 0,84€ por un brick de leche)
+            # bulk_price  = precio de referencia por kg/l (para comparar)
+            bulk = pi.get("bulk_price") or pi.get("reference_price")
             price = Price(
                 product_id=product_id,
                 supermarket_id=self.supermarket_id,
                 amount=float(pi.get("unit_price", 0)),
-                unit_price=float(unit_price_raw) if unit_price_raw else None,
+                unit_price=float(bulk) if bulk else None,
                 updated_at=now,
             )
 

@@ -8,6 +8,11 @@ Schema Firestore:
 
   prices/{productId}          ← una entrada por producto-supermercado
     productId, supermarketId, amount, unitPrice, updatedAt
+
+  metadata/cestaiq            ← 1 documento, usado por la app para obtener
+    categories: [str]           la lista de categorías sin leer 7.100 productos
+    supermarkets: [str]
+    updatedAt: timestamp
 """
 
 import logging
@@ -93,3 +98,22 @@ def _set_price(batch: WriteBatch, db, p: Price) -> None:
         },
         merge=True,
     )
+
+
+def write_metadata(db, categories: list[str], supermarket_ids: list[str]) -> None:
+    """
+    Escribe metadata/cestaiq con la lista de categorías y supermercados.
+
+    La app Flutter lee este documento (1 lectura) en lugar de escanear
+    toda la colección products (7.100 lecturas) para obtener categorías.
+    """
+    from datetime import datetime, timezone
+    db.collection("metadata").document("cestaiq").set(
+        {
+            "categories": sorted(set(categories)),
+            "supermarkets": sorted(set(supermarket_ids)),
+            "updatedAt": datetime.now(timezone.utc),
+        },
+        merge=True,
+    )
+    logger.info("metadata/cestaiq actualizado (%d categorías)", len(categories))

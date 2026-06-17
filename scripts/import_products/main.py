@@ -19,7 +19,7 @@ import sys
 import time
 from pathlib import Path
 
-from .firebase_client import init_firebase, get_db, upsert_batch
+from .firebase_client import init_firebase, get_db, upsert_batch, write_metadata
 from .models import Product, Price
 from .providers.mercadona import MercadonaProvider
 
@@ -44,7 +44,8 @@ PROVIDERS = [
 FLUSH_EVERY = 300
 
 
-def import_provider(provider, db) -> int:
+def import_provider(provider, db) -> tuple[int, list[str]]:
+    """Importa todos los productos del proveedor. Devuelve (total, categorías)."""
     logger.info("─" * 60)
     logger.info("Iniciando importación: %s (%s)", provider.name, provider.supermarket_id)
 
@@ -52,11 +53,13 @@ def import_provider(provider, db) -> int:
     logger.info("Categorías de primer nivel encontradas: %d", len(top_categories))
 
     buffer: list[tuple[Product, Price]] = []
+    seen_categories: set[str] = set()
     total = 0
     errors = 0
 
     for top_cat in top_categories:
         top_name = top_cat.get("name", "Sin categoría")
+        seen_categories.add(top_name)
         sub_cats = top_cat.get("categories", [top_cat])
         logger.info("  [%s] → %d subcategorías", top_name, len(sub_cats))
 
@@ -89,7 +92,7 @@ def import_provider(provider, db) -> int:
         "✓ %s finalizado — %d productos importados, %d errores",
         provider.name, total, errors,
     )
-    return total
+    return total, sorted(seen_categories)
 
 
 def main() -> None:
@@ -109,10 +112,19 @@ def main() -> None:
     db = get_db()
 
     grand_total = 0
+    all_categories: list[str] = []
+    all_supermarket_ids: list[str] = []
     start = time.time()
 
     for provider in PROVIDERS:
-        grand_total += import_provider(provider, db)
+        count, categories = import_provider(provider, db)
+        grand_total += count
+        all_categories.extend(categories)
+        all_supermarket_ids.append(provider.supermarket_id)
+
+    # Escribe metadata/cestaiq: 1 documento que la app lee en vez de
+    # escanear toda la colección products para obtener las categorías.
+    write_metadata(db, all_categories, all_supermarket_ids)
 
     elapsed = time.time() - start
     logger.info("═" * 60)

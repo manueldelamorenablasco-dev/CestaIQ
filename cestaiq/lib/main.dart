@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,6 +29,12 @@ void main() async {
   // Cuando tengas google-services.json real, elimina el try/catch.
   try {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    // Offline persistence: el SDK guarda los documentos en SQLite local.
+    // Arranques en frío repetidos sirven desde caché → 0 lecturas de servidor.
+    FirebaseFirestore.instance.settings = const Settings(
+      persistenceEnabled: true,
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+    );
     await AnalyticsService().logAppOpen();
   } catch (_) {}
 

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme/app_theme.dart';
+import '../providers/analytics_provider.dart';
 import '../providers/cart_provider.dart';
 import 'cart/cart_screen.dart';
 import 'home/home_screen.dart';
 import 'profile/profile_screen.dart';
 
 final _currentTabProvider = StateProvider<int>((ref) => 0);
+
+const _tabScreenNames = ['home', 'cart', 'profile'];
 
 class MainShell extends ConsumerWidget {
   const MainShell({super.key});
@@ -29,8 +32,10 @@ class MainShell extends ConsumerWidget {
         ),
         child: BottomNavigationBar(
           currentIndex: currentTab,
-          onTap: (index) =>
-              ref.read(_currentTabProvider.notifier).state = index,
+          onTap: (index) {
+            ref.read(_currentTabProvider.notifier).state = index;
+            ref.read(analyticsServiceProvider).logScreenView(_tabScreenNames[index]);
+          },
           items: [
             const BottomNavigationBarItem(
               icon: Icon(Icons.search_outlined),

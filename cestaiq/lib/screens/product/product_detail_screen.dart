@@ -3,16 +3,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_data.dart';
 import '../../data/models/price.dart';
+import '../../providers/analytics_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/products_provider.dart';
 
-class ProductDetailScreen extends ConsumerWidget {
+class ProductDetailScreen extends ConsumerStatefulWidget {
   final String productId;
 
   const ProductDetailScreen({super.key, required this.productId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProductDetailScreen> createState() =>
+      _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
+  @override
+  void initState() {
+    super.initState();
+    ref.read(analyticsServiceProvider).logScreenView('product_detail');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final productId = widget.productId;
     final product = MockData.products.firstWhere((p) => p.id == productId);
     final pricesAsync = ref.watch(productPricesProvider(productId));
     final cartItems = ref.watch(cartProvider);
@@ -155,6 +169,11 @@ class ProductDetailScreen extends ConsumerWidget {
             child: ElevatedButton.icon(
               onPressed: () {
                 ref.read(cartProvider.notifier).addProduct(product);
+                ref.read(analyticsServiceProvider).logAddToCart(
+                  productId: product.id,
+                  productName: product.name,
+                  category: product.category,
+                );
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Row(

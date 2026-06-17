@@ -2,13 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_data.dart';
+import '../../providers/analytics_provider.dart';
 import '../../providers/cart_provider.dart';
 
-class CartResultScreen extends ConsumerWidget {
+class CartResultScreen extends ConsumerStatefulWidget {
   const CartResultScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CartResultScreen> createState() => _CartResultScreenState();
+}
+
+class _CartResultScreenState extends ConsumerState<CartResultScreen> {
+  bool _logged = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.read(analyticsServiceProvider).logScreenView('cart_result');
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cartItems = ref.watch(cartProvider);
     final totalsAsync = ref.watch(cartTotalsProvider);
 
@@ -43,6 +57,18 @@ class CartResultScreen extends ConsumerWidget {
 
           final cheapestSupermarket = MockData.supermarkets
               .firstWhere((s) => s.id == cheapestId);
+
+          if (!_logged) {
+            _logged = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ref.read(analyticsServiceProvider).logCartCompleted(
+                cheapestSupermarket: cheapestSupermarket.name,
+                cheapestPrice: sorted.first.value,
+                saving: saving,
+                itemCount: cartItems.length,
+              );
+            });
+          }
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),

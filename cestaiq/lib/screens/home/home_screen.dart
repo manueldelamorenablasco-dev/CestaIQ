@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_data.dart';
+import '../../providers/analytics_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/products_provider.dart';
@@ -17,9 +19,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _searchCtrl = TextEditingController();
+  Timer? _searchDebounce;
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -83,8 +87,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // ── Buscador ──────────────────────────────────────────
                     TextField(
                       controller: _searchCtrl,
-                      onChanged: (value) =>
-                          ref.read(searchQueryProvider.notifier).state = value,
+                      onChanged: (value) {
+                        ref.read(searchQueryProvider.notifier).state = value;
+                        _searchDebounce?.cancel();
+                        _searchDebounce = Timer(const Duration(milliseconds: 800), () {
+                          ref.read(analyticsServiceProvider).logSearch(value);
+                        });
+                      },
                       decoration: InputDecoration(
                         hintText: 'Buscar productos...',
                         prefixIcon: const Icon(Icons.search, size: 20),
@@ -172,6 +181,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         onTap: () => _openDetail(context, product.id),
                         onAddToCart: () {
                           ref.read(cartProvider.notifier).addProduct(product);
+                          ref.read(analyticsServiceProvider).logAddToCart(
+                            productId: product.id,
+                            productName: product.name,
+                            category: product.category,
+                          );
                           _showAddedSnackbar(context, product.name);
                         },
                       );
@@ -250,9 +264,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           product: product,
                           onTap: () => _openDetail(context, product.id),
                           onAddToCart: () {
-                            ref
-                                .read(cartProvider.notifier)
-                                .addProduct(product);
+                            ref.read(cartProvider.notifier).addProduct(product);
+                            ref.read(analyticsServiceProvider).logAddToCart(
+                              productId: product.id,
+                              productName: product.name,
+                              category: product.category,
+                            );
                             _showAddedSnackbar(context, product.name);
                           },
                         );

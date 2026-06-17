@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
+import 'data/services/analytics_service.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -27,6 +28,7 @@ void main() async {
   // Cuando tengas google-services.json real, elimina el try/catch.
   try {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await AnalyticsService().logAppOpen();
   } catch (_) {}
 
   runApp(
